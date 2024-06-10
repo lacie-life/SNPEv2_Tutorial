@@ -138,6 +138,9 @@ qpm-cli --extract qualcomm_neural_processing_sdk # (or) qpm-cli --extract <full 
 
 ```bash
 docker run -it --gpus all -v /opt/qcom/aistack/snpe/2.12.0.230626:/workspace nvcr.io/nvidia/pytorch:21.08-py3 /bin/bash
+
+source [SNPEInstallation Path]/bin/envsetup.sh /opt/pytorch
+
 ```
 
 ### Fix something
@@ -174,6 +177,7 @@ snpe-dlc-quantize --input_dlc [DLC file to be quantized] --input_list [txt file 
 sudo apt-get update
 sudo apt-get install iputils-ping
 sudo apt-get install net-tools
+sudo apt-get install adb
 ```
 
 ### SNPE 
@@ -191,17 +195,18 @@ sudo apt-get install net-tools
 #### Create a route
 
 ```bash
+adb root # Connect to device
 adb shell							
-mkdir /data/local/tmp/snpeexample/bin && mkdir /data/local/tmp/snpeexample/lib && mkdir -p /data/local/tmp/snpeexample/dsp/lib				
+mkdir /data/local/tmp/snpe212/bin && mkdir /data/local/tmp/snpe212/lib && mkdir -p /data/local/tmp/snpe212/dsp/lib				
 exit
 ```
 
 #### SNPE File Insertion Example Code
 
 ```bash
-cd /workspace/snpe_sdk212/lib/aarch64-oe-linux-gcc8.2/ && adb push ./* /data/local/tmp/snpeexample/lib
-cd /workspace/snpe_sdk212/bin/aarch64-ubuntu-gcc7.5/ && adb push ./* /data/local/tmp/snpeexample/bin
-cd /workspace/snpe_sdk212/lib/hexagon-v66/unsigned && adb push ./* /data/local/tmp/snpeexample/dsp/lib
+cd /workspace/snpe_sdk212/lib/aarch64-oe-linux-gcc8.2/ && adb push ./* /data/local/tmp/snpe212/lib
+cd /workspace/snpe_sdk212/bin/aarch64-ubuntu-gcc7.5/ && adb push ./* /data/local/tmp/snpe212/bin
+cd /workspace/snpe_sdk212/lib/hexagon-v66/unsigned && adb push ./* /data/local/tmp/snpe212/dsp/lib
 
 ```
 
@@ -220,7 +225,7 @@ source setup_sdk_env.source
 
 ```bash
 adb shell
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH /data/local/tmp/snpeexample/lib && export PATH=$PATH: /data/local/tmp/snpeexample/bin && export ADSP_LIBRARY_PATH=" /data/local/tmp/snpeexample/dsp;/vendor/lib/rfsa/dsp/testsig;/dsp" && snpe-net-run –h
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/data/local/tmp/snpe212/lib && export PATH=$PATH:/data/local/tmp/snpe212/bin && export ADSP_LIBRARY_PATH="/data/local/tmp/snpe212/dsp/lib;/vendor/lib/rfsa/dsp/testsig;/dsp" && snpe-net-run -h
 
 /vendor/lib/rfsa/dsp/testsig # The route is Hexagon SDKPath of the signature file
 ```
@@ -233,10 +238,36 @@ snpe-platform-validator --runtime dsp
 
 ### DSP Inference
 
-```bash
-snpe-net-run --container Origin_qat.dlc --input_list target_raw_list.txt --debug --use_dsp --platform_options unsignedPD:OFF
+- Create raw file for inference
+
+```python
+    f = open("./a9_test_paper_list.txt","w")
+    img_raw = np.array(imgs.permute(0,2,3,1),dtype = np.float32)
+    img_raw.tofile(os.path.join('./a9_test_paper_raw',img_paths[0].split('/')[-1][:-4]+".raw"))
+    f.write(os.path.join("/data/local/tmp/pjw/a9_test_paper_raw",img_paths[0].split('/')[-1][:-4]+".raw"))
+    f.write('\n')
 ```
 
+- Send to device
+
+```
+adb push/pull
+```
+
+- Run in the device
+
+```bash
+snpe-net-run --container Origin_qat.dlc --input_list target_raw_list.txt --debug --use_dsp --platform_options unsignedPD:OFF
+
+
+snpe-throughput-net-run --container qul_cply7.dlc --input_raw ./006000.raw,./006001.raw --use_dsp --platform_options unsignedPD:OFF --set_output_tensors /model.159/im/Mul_output_0,/model.160/im/Mul_output_0,/model.161/im/Mul_output_0 --duration 60 --perf_profile high_performance
+```
+
+- Read log file
+
+```
+snpe-diagview --input_log ./logs/SNPEDiag_1.log
+```
 
 
 
