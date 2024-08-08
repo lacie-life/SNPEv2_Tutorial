@@ -156,7 +156,7 @@ pip install onnx-simplifier
 ### snpe-onnx-to-dlc usage
 
 ```bash
-snpe-onnx-to-dlc --input_network ./yolov7_2stream.onnx --out_node /model.159/Transpose_output_0 --out_node /model.160/Transpose_output_0 --out_node  /model.160/Transpose_output_0  --output_path ./asdf.dlc
+snpe-onnx-to-dlc --input_network ./yolov7_2stream.onnx --out_node /model.159/im/Mul_output_0 --out_node /model.160/im/Mul_output_0 --out_node  /model.161/im/Mul_output_0  --output_path ./asdf.dlc
 ```
 
 - Note: Get out_node name by [netron](https://netron.app/)

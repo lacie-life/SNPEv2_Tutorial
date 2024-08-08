@@ -1,0 +1,2 @@
+input.1:=/workspace/ivpg_test/raw_data/training/south_south1_1651673050_454284855_s110_lidar_ouster_south/1651673050_454284855_s110_lidar_ouster_south_image.raw input.65:=/workspace/ivpg_test/raw_data/training/south_south1_1651673050_454284855_s110_lidar_ouster_south/1651673050_454284855_s110_lidar_ouster_south_lidar.raw
+
